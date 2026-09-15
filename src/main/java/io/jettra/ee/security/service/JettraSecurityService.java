@@ -216,6 +216,134 @@ public class JettraSecurityService {
         }
     }
 
+    public void changePassword(String username, String newPlainPassword) {
+        initReposIfNull();
+        if (username == null || newPlainPassword == null || newPlainPassword.isBlank()) {
+            throw new IllegalArgumentException("Usuario y nueva contraseña no pueden estar vacíos.");
+        }
+        Optional<JCredential> credOpt = credentialRepository.findByUsername(username);
+        if (credOpt.isEmpty()) {
+            throw new NoSuchElementException("Credencial para usuario '" + username + "' no encontrada.");
+        }
+        JCredential cred = credOpt.get();
+        String hash = JettraSecurityDBInitializer.hashPassword(newPlainPassword);
+        JCredential updated = new JCredential(
+                cred.id(),
+                cred.jUser(),
+                cred.username(),
+                hash,
+                cred.active(),
+                cred.lastLogin()
+        );
+        credentialRepository.save(updated);
+    }
+
+    public void setUserStatus(String username, boolean active) {
+        initReposIfNull();
+        Optional<JUser> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new NoSuchElementException("Usuario '" + username + "' no encontrado.");
+        }
+        userRepository.updateUser(username, new UserUpdateCommand(null, null, active, null, null));
+        Optional<JCredential> credOpt = credentialRepository.findByUsername(username);
+        if (credOpt.isPresent()) {
+            JCredential c = credOpt.get();
+            credentialRepository.save(new JCredential(c.id(), c.jUser(), c.username(), c.passwordHash(), active, c.lastLogin()));
+        }
+    }
+
+    public void addRoleToUser(String username, String roleName) {
+        initReposIfNull();
+        Optional<JUser> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new NoSuchElementException("Usuario '" + username + "' no encontrado.");
+        }
+        String cleanRole = roleName.toUpperCase().trim();
+        JRole role = roleRepository.findByName(cleanRole).orElseGet(() -> {
+            JRole nr = new JRole(UUID.nameUUIDFromBytes(cleanRole.getBytes(StandardCharsets.UTF_8)), cleanRole, true);
+            roleRepository.save(nr);
+            return nr;
+        });
+        Set<JRole> roles = new HashSet<>(userOpt.get().jRoles() != null ? userOpt.get().jRoles() : Set.of());
+        roles.add(role);
+        userRepository.updateUser(username, new UserUpdateCommand(null, null, null, roles, null));
+    }
+
+    public void removeRoleFromUser(String username, String roleName) {
+        initReposIfNull();
+        Optional<JUser> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new NoSuchElementException("Usuario '" + username + "' no encontrado.");
+        }
+        Set<JRole> roles = new HashSet<>();
+        if (userOpt.get().jRoles() != null) {
+            for (JRole r : userOpt.get().jRoles()) {
+                if (r != null && !roleName.equalsIgnoreCase(r.name())) {
+                    roles.add(r);
+                }
+            }
+        }
+        userRepository.updateUser(username, new UserUpdateCommand(null, null, null, roles, null));
+    }
+
+    public void assignDatabase(String username, String database) {
+        initReposIfNull();
+        Optional<JUser> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new NoSuchElementException("Usuario '" + username + "' no encontrado.");
+        }
+        Set<String> dbs = new HashSet<>(userOpt.get().assignedDatabases() != null ? userOpt.get().assignedDatabases() : Set.of());
+        dbs.add(database.trim());
+        userRepository.updateUser(username, new UserUpdateCommand(null, null, null, null, dbs));
+    }
+
+    public void revokeDatabase(String username, String database) {
+        initReposIfNull();
+        Optional<JUser> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new NoSuchElementException("Usuario '" + username + "' no encontrado.");
+        }
+        Set<String> dbs = new HashSet<>();
+        if (userOpt.get().assignedDatabases() != null) {
+            for (String db : userOpt.get().assignedDatabases()) {
+                if (!database.equalsIgnoreCase(db)) {
+                    dbs.add(db);
+                }
+            }
+        }
+        userRepository.updateUser(username, new UserUpdateCommand(null, null, null, null, dbs));
+    }
+
+    public List<JRole> listRoles() {
+        initReposIfNull();
+        return roleRepository.findAll();
+    }
+
+    public JRole createRole(String roleName) {
+        initReposIfNull();
+        String name = roleName.toUpperCase().trim();
+        Optional<JRole> existing = roleRepository.findByName(name);
+        if (existing.isPresent()) return existing.get();
+        JRole newRole = new JRole(UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)), name, true);
+        roleRepository.save(newRole);
+        return newRole;
+    }
+
+    public JCredentialRepository getCredentialRepository() {
+        initReposIfNull();
+        return credentialRepository;
+    }
+
+    public JUserRepository getUserRepository() {
+        initReposIfNull();
+        return userRepository;
+    }
+
+    public JRoleRepository getRoleRepository() {
+        initReposIfNull();
+        return roleRepository;
+    }
+
     public String getJwtSecret() {
         return jwtSecret;
     }
@@ -224,3 +352,4 @@ public class JettraSecurityService {
         return jwtExpirationMs;
     }
 }
+

@@ -35,6 +35,10 @@ public class JettraEE {
     public static final String VERSION = "1.0.0-SNAPSHOT";
 
     public static void main(String[] args) {
+        if (args != null && args.length > 0 && ("shell".equalsIgnoreCase(args[0]) || "--shell".equalsIgnoreCase(args[0]))) {
+            io.jettra.ee.security.shell.JettraSecurityShell.main(Arrays.copyOfRange(args, 1, args.length));
+            return;
+        }
         printBanner();
         int port = 8080;
         String contextPath = "/";
@@ -77,6 +81,10 @@ public class JettraEE {
      * Inicia JettraEE escaneando el paquete de la clase principal indicada.
      */
     public static JettraEEServer start(Class<?> appClass, String[] args) {
+        if (args != null && args.length > 0 && ("shell".equalsIgnoreCase(args[0]) || "--shell".equalsIgnoreCase(args[0]))) {
+            io.jettra.ee.security.shell.JettraSecurityShell.main(Arrays.copyOfRange(args, 1, args.length));
+            System.exit(0);
+        }
         printBanner();
         String basePackage = appClass.getPackageName();
 

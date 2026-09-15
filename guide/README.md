@@ -20,6 +20,7 @@ Esta guía documenta paso a paso cómo crear un nuevo proyecto o migrar un proye
 12. [Consumo de Microservicios con MicroProfile Rest Client](#12-consumo-de-microservicios-con-microprofile-rest-client)
 13. [Vistas Reactivas con JettraFlux](#13-vistas-reactivas-con-jettraflux)
 14. [Despliegue y Optimización en Producción](#14-despliegue-y-optimización-en-producción)
+15. [Administración de Seguridad con JettraSecurityDB desde el Shell (CLI / REPL)](#15-administración-de-seguridad-con-jettrasecuritydb-desde-el-shell-cli--repl)
 
 ---
 
@@ -478,3 +479,134 @@ ENTRYPOINT ["java", "-XX:+UseCompactObjectHeaders", "-jar", "app.jar"]
 ```
 
 ¡Listo! Con esto su microservicio cuenta con el máximo rendimiento, estándares abiertos de Jakarta EE y Eclipse MicroProfile, y la potencia reactiva del ecosistema Jettra.
+
+---
+
+## 15. Administración de Seguridad con JettraSecurityDB desde el Shell (CLI / REPL)
+
+**JettraEE** incluye un motor embebido de persistencia y gestión de identidades denominado **JettraSecurityDB** (ubicado por defecto en `db/securitydb/`). Para facilitar la administración de usuarios, contraseñas, roles y la emisión de tokens JWT, se proporciona un **Shell Interactivo (REPL)** y una interfaz **CLI** de línea de comandos.
+
+### 15.1 Formas de Ejecutar el Shell
+
+#### A. Desde la clase principal de la aplicación (`App.java` o JAR ejecutable)
+
+Si empaqueta o ejecuta su aplicación (por ejemplo `JettraEEExample`):
+
+```bash
+# Modo Interactivo (REPL en consola):
+mvn exec:java -Dexec.args="shell"
+
+# O si dispone del JAR ejecutable:
+java -jar target/mi-servicio-ee.jar shell
+```
+
+#### B. Modo Comando Directo (One-Shot CLI)
+
+Puede ejecutar cualquier comando administrativo directamente desde la terminal pasando los argumentos al comando `shell`:
+
+```bash
+# Listar usuarios:
+mvn exec:java -Dexec.args="shell users"
+
+# Crear usuario:
+mvn exec:java -Dexec.args="shell user create maria Secreta123! maria@empresa.com ADMIN db_ventas"
+
+# Probar autenticación y obtener token JWT:
+mvn exec:java -Dexec.args="shell login admin admin"
+```
+
+#### C. Ejecución directa de la clase del Shell
+
+También puede invocar directamente `io.jettra.ee.security.shell.JettraSecurityShell`:
+
+```bash
+mvn exec:java -Dexec.mainClass="io.jettra.ee.security.shell.JettraSecurityShell"
+```
+
+---
+
+### 15.2 Comandos Disponibles
+
+Al ingresar al shell interactivo verá el indicador `jettra-security> `. Los comandos se agrupan en las siguientes categorías:
+
+#### 1. Gestión de Usuarios
+
+| Comando | Descripción |
+| :--- | :--- |
+| `users` o `user list` | Lista todos los usuarios registrados con sus roles, estado, correo y bases de datos asignadas. |
+| `user show <username>` | Muestra la ficha detallada del usuario (UUID, estado, correo, teléfono, roles, credencial y fecha de último login). |
+| `user create <user> <pass> [email] [role] [dbs]` | Crea un nuevo usuario y su credencial con contraseña encriptada en SHA-256. |
+| `user passwd <user> <newPassword>` | Actualiza la contraseña del usuario generando un nuevo hash seguro. |
+| `user status <user> <active\|inactive>` | Activa o desactiva la cuenta del usuario y sus credenciales de acceso. |
+| `user role add <user> <role>` | Asigna un rol adicional (ej: `ADMIN`, `MANAGER`, `USER`) al usuario. |
+| `user role remove <user> <role>` | Remueve un rol asignado al usuario. |
+| `user db assign <user> <database>` | Asigna permisos de acceso a una base de datos específica. |
+| `user db revoke <user> <database>` | Revoca el acceso a una base de datos específica. |
+| `user delete <user>` | Elimina el usuario y su credencial de la base de datos (el usuario maestro `admin` está protegido). |
+
+#### 2. Gestión de Roles
+
+| Comando | Descripción |
+| :--- | :--- |
+| `roles` o `role list` | Muestra el catálogo de roles disponibles en el sistema y su UUID. |
+| `role create <roleName>` | Registra un nuevo rol en el sistema (ej: `role create AUDITOR`). |
+
+#### 3. Autenticación y Generador de Tokens JWT
+
+| Comando | Descripción |
+| :--- | :--- |
+| `login <username> <password>` | Autentica las credenciales contra `JettraSecurityDB` y genera un **JWT Bearer Token** válido por 24 horas listo para usar. |
+| `token verify <jwtToken>` | Valida la firma criptográfica del token, verifica su fecha de expiración y decodifica el payload JSON (claims `sub`, `roles`, etc.). |
+
+#### 4. Diagnóstico y Sistema
+
+| Comando | Descripción |
+| :--- | :--- |
+| `info` o `status` | Muestra la ruta de almacenamiento (`db/securitydb`) y métricas de registros (total de usuarios, credenciales y roles). |
+| `init` o `seed` | Inicializa o verifica los registros maestros base (`admin:admin`, roles `ADMIN`, `MANAGER`, `USER`, `DEMO`). |
+| `clear` o `cls` | Limpia la pantalla de la terminal. |
+| `help` o `?` | Despliega la lista completa de comandos y sintaxis. |
+| `exit` o `quit` | Sale del shell de seguridad. |
+
+---
+
+### 15.3 Flujo Práctico: De la Consola a Swagger UI
+
+#### Paso 1: Generar Token desde el Shell
+
+Ejecute en la terminal:
+
+```bash
+mvn exec:java -Dexec.args="shell login admin admin"
+```
+
+Salida esperada:
+
+```
+[SUCCESS] Autenticación Exitosa para: admin
+ • Roles:        ADMIN
+ • Expiración:   24 Horas
+ • JWT Token:
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJncm91cHMiOiJbQURNSU5dIiwic3ViIjoiYWRtaW4iLCJleHAiOjE3ODk1Mjk0MjIsImlhdCI6MTc4OTQ0MzAyMiwiZW1haWwiOiJhZG1pbkBqZXR0cmEuaW8iLCJyb2xlcyI6IltBRE1JTl0ifQ.55gFqWiAyV2n8z7Qi7_udBCsYC8__Qo8p6jkf0twAv0
+```
+
+#### Paso 2: Usar el Token en Swagger UI
+
+1. Inicie el servidor normalmente (`mvn exec:java` o `java -jar ...`).
+2. Abra en su navegador web: `http://localhost:8080/q/swagger-ui`.
+3. Haga clic en el botón verde **Authorize 🔓** en la esquina superior derecha.
+4. Pegue el token copiado del paso anterior en el campo **Value** y haga clic en **Authorize**.
+5. Todos los endpoints protegidos con `@RolesAllowed("ADMIN")` (como `POST /api/productos` o `/api/security/users`) ejecutarán sus peticiones autorizadas con éxito.
+
+#### Paso 3: Crear un Nuevo Usuario Operador desde el Shell
+
+```bash
+jettra-security> user create operador ClaveSegura2026! operador@empresa.com USER catalogo_db
+[SUCCESS] Usuario 'operador' creado exitosamente (UUID: 9939e82c-19fe-4997-9539-b1ddcb899f15, Roles: USER)
+
+jettra-security> login operador ClaveSegura2026!
+[SUCCESS] Autenticación Exitosa para: operador
+ • Roles:        USER
+ • JWT Token:    eyJ0eXAiOiJKV1Qi...
+```
+
