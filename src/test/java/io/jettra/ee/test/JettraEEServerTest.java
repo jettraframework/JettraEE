@@ -230,6 +230,18 @@ public class JettraEEServerTest {
         assertEquals(200, response.statusCode());
         assertTrue(response.body().contains("\"openapi\":\"3.1.0\""), "Debe responder con especificación OpenAPI 3.1");
         assertTrue(response.body().contains("/users"), "Debe listar el path /users");
+        assertTrue(response.body().contains("\"securitySchemes\""), "Debe contener components.securitySchemes");
+        assertTrue(response.body().contains("\"BearerAuth\""), "Debe contener el esquema BearerAuth");
+        assertTrue(response.body().contains("\"security\""), "Debe contener requerimientos de seguridad globales");
+
+        HttpRequest uiReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + TEST_PORT + "/q/swagger-ui"))
+                .GET()
+                .build();
+        HttpResponse<String> uiRes = client.send(uiReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, uiRes.statusCode());
+        assertTrue(uiRes.body().contains("Swagger UI"));
+        assertTrue(uiRes.body().contains("persistAuthorization: true"));
     }
 
     @Test

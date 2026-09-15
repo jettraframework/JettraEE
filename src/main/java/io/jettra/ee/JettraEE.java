@@ -107,6 +107,7 @@ public class JettraEE {
                 .port(port)
                 .contextPath(contextPath)
                 .webappRoot(webappRoot)
+                .registerOpenApiClass(appClass)
                 .scanPackages(basePackage)
                 .build();
 
@@ -187,6 +188,15 @@ public class JettraEE {
             return this;
         }
 
+        private final List<Class<?>> manualOpenApiClasses = new ArrayList<>();
+
+        public Builder registerOpenApiClass(Class<?> clazz) {
+            if (clazz != null) {
+                this.manualOpenApiClasses.add(clazz);
+            }
+            return this;
+        }
+
         public Builder registerFluxPage(String path, Class<?> pageClass) {
             this.manualFluxPages.put(path, pageClass);
             return this;
@@ -258,6 +268,14 @@ public class JettraEE {
                         fluxIntegration.registerPage(pageAnn.path(), fp);
                     }
                 }
+
+                // 6. Descubrir anotaciones MicroProfile OpenAPI (@OpenAPIDefinition, @SecurityScheme, @SecuritySchemes)
+                Set<Class<?>> openApiDefs = scanner.findAnnotatedClasses(org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition.class);
+                openApiHandler.registerScannedClasses(openApiDefs);
+                Set<Class<?>> secSchemeClasses = scanner.findAnnotatedClasses(org.eclipse.microprofile.openapi.annotations.security.SecurityScheme.class);
+                openApiHandler.registerScannedClasses(secSchemeClasses);
+                Set<Class<?>> secSchemesClasses = scanner.findAnnotatedClasses(org.eclipse.microprofile.openapi.annotations.security.SecuritySchemes.class);
+                openApiHandler.registerScannedClasses(secSchemesClasses);
             }
 
             // Registros manuales adicionales
@@ -269,6 +287,9 @@ public class JettraEE {
             }
             for (Map.Entry<String, Class<?>> entry : manualFluxPages.entrySet()) {
                 fluxIntegration.registerPage(entry.getKey(), entry.getValue());
+            }
+            for (Class<?> c : manualOpenApiClasses) {
+                openApiHandler.registerScannedClass(c);
             }
 
             WebResourceManager webResourceManager = new WebResourceManager(webappRoot);

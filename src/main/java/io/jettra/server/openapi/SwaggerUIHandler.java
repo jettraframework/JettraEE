@@ -172,6 +172,7 @@ public class SwaggerUIHandler implements HttpHandler {
                 "      dom_id: '#swagger-ui',\n" +
                 "      operationsSorter: 'alpha',\n" +
                 "      tagsSorter: 'alpha',\n" +
+                "      persistAuthorization: true,\n" +
                 "    });\n" +
                 "  };\n" +
                 "  const toggleSwitch = document.querySelector('.theme-switch input[type=\"checkbox\"]');\n" +
