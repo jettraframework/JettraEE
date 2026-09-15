@@ -33,12 +33,12 @@
         <microprofile.jwt.version>2.1</microprofile.jwt.version>
 
         <!-- Jettra Stack Ecosystem -->
-        <jettra.json.version>1.0.0-SNAPSHOT</jettra.json.version>
-        <jettra.jwt.version>1.0.0-SNAPSHOT</jettra.jwt.version>
+        <jettra.json.version>1.0.0</jettra.json.version>
+        <jettra.jwt.version>1.0.0</jettra.jwt.version>
         <jettra.rules.version>1.0.0-SNAPSHOT</jettra.rules.version>
         <jettra.flux.version>1.0.0-SNAPSHOT</jettra.flux.version>
-        <jettra.annotation.version>1.0.0-SNAPSHOT</jettra.annotation.version>
-        <jettra.test.version>1.0.0-SNAPSHOT</jettra.test.version>
+        <jettra.annotation.version>1.0.0</jettra.annotation.version>
+        <jettra.test.version>1.0.0</jettra.test.version>
     </properties>
 
     <dependencies>
@@ -74,63 +74,75 @@
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
             <version>${microprofile.config.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.health</groupId>
             <artifactId>microprofile-health-api</artifactId>
             <version>${microprofile.health.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
             <version>${microprofile.metrics.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
             <version>${microprofile.openapi.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
             <artifactId>microprofile-fault-tolerance-api</artifactId>
             <version>${microprofile.faulttolerance.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.rest.client</groupId>
             <artifactId>microprofile-rest-client-api</artifactId>
             <version>${microprofile.restclient.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.jwt</groupId>
             <artifactId>microprofile-jwt-auth-api</artifactId>
             <version>${microprofile.jwt.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Jettra Stack Modules -->
         <dependency>
-            <groupId>io.jettra</groupId>
+            <groupId>com.github.jettraframework</groupId>
             <artifactId>JettraJSON</artifactId>
             <version>${jettra.json.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.jettra</groupId>
+            <groupId>com.github.jettraframework</groupId>
             <artifactId>JettraJWT</artifactId>
             <version>${jettra.jwt.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.jettra</groupId>
+            <groupId>com.github.jettraframework</groupId>
             <artifactId>JettraRules</artifactId>
             <version>${jettra.rules.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.jettra</groupId>
             <artifactId>JettraFlux</artifactId>
             <version>${jettra.flux.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.jettra</groupId>
+            <groupId>com.github.jettraframework</groupId>
             <artifactId>JettraAnnotation</artifactId>
             <version>${jettra.annotation.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Testing -->
@@ -141,7 +153,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.jettra</groupId>
+            <groupId>com.github.jettraframework</groupId>
             <artifactId>JettraTest</artifactId>
             <version>${jettra.test.version}</version>
             <scope>test</scope>
