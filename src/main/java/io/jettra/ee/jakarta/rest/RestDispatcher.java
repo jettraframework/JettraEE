@@ -413,19 +413,37 @@ public class RestDispatcher implements HttpHandler {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
-                // Validación básica de token o integración con JettraJWT
                 String secret = "default_secret_key_jettra_ee_2026";
-                io.jettra.jwt.JettraJWT jwt = new io.jettra.jwt.JettraJWT(secret, 3600000);
+                try {
+                    var cfg = org.eclipse.microprofile.config.ConfigProvider.getConfig();
+                    secret = cfg.getOptionalValue("server.jwt.secret", String.class)
+                            .orElse(cfg.getOptionalValue("mp.jwt.verify.publickey", String.class)
+                            .orElse(secret));
+                } catch (Throwable ignored) {}
+
+                io.jettra.jwt.JettraJWT jwt = new io.jettra.jwt.JettraJWT(secret, 86400000L);
                 Map<String, Object> payload = jwt.getPayload(token);
                 if (payload != null) {
                     username = jwt.extractUsername(token);
                     Object rolesObj = payload.get("roles");
+                    if (rolesObj == null) {
+                        rolesObj = payload.get("groups");
+                    }
                     if (rolesObj instanceof List<?> rList) {
                         for (Object r : rList) {
-                            userRoles.add(r.toString());
+                            if (r != null) userRoles.add(r.toString().trim());
                         }
                     } else if (rolesObj instanceof String rStr) {
-                        userRoles.addAll(Arrays.asList(rStr.split(",")));
+                        String cleanStr = rStr.trim();
+                        if (cleanStr.startsWith("[") && cleanStr.endsWith("]")) {
+                            cleanStr = cleanStr.substring(1, cleanStr.length() - 1);
+                        }
+                        for (String s : cleanStr.split(",")) {
+                            String trimmed = s.trim().replace("\"", "").replace("'", "");
+                            if (!trimmed.isEmpty()) {
+                                userRoles.add(trimmed);
+                            }
+                        }
                     }
                 }
             } catch (Exception ignored) {}
@@ -440,7 +458,8 @@ public class RestDispatcher implements HttpHandler {
 
             @Override
             public boolean isUserInRole(String role) {
-                return userRoles.contains(role);
+                if (role == null) return false;
+                return userRoles.stream().anyMatch(r -> r.equalsIgnoreCase(role.trim()));
             }
 
             @Override

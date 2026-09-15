@@ -212,6 +212,24 @@ public class JettraEE {
             OpenApiEndpointHandler openApiHandler = new OpenApiEndpointHandler(restDispatcher, appTitle, appVersion);
             FluxIntegration fluxIntegration = new FluxIntegration();
 
+            // 0. Inicializar Subsistema JettraSecurityDB y registrar en CDI y REST
+            try {
+                io.jettra.ee.security.repository.JettraSecurityDBInitializer.initializeIfEmpty();
+            } catch (Throwable t) {
+                IO.warn("No se pudo auto-inicializar JettraSecurityDB: " + t.getMessage());
+            }
+
+            JettraCDIContainer.getInstance().registerBean(io.jettra.ee.security.repository.JRoleRepositoryImpl.class);
+            JettraCDIContainer.getInstance().registerBean(io.jettra.ee.security.repository.JUserRepositoryImpl.class);
+            JettraCDIContainer.getInstance().registerBean(io.jettra.ee.security.repository.JCredentialRepositoryImpl.class);
+            JettraCDIContainer.getInstance().registerBean(io.jettra.ee.security.repository.JAccreditationRepositoryImpl.class);
+            JettraCDIContainer.getInstance().registerBean(io.jettra.ee.security.service.JettraSecurityService.class);
+
+            restDispatcher.registerResource(io.jettra.ee.security.rest.SecurityAuthController.class);
+            restDispatcher.registerResource(io.jettra.ee.security.rest.SecurityUserController.class);
+            openApiHandler.registerScannedClass(io.jettra.ee.security.rest.SecurityAuthController.class);
+            openApiHandler.registerScannedClass(io.jettra.ee.security.rest.SecurityUserController.class);
+
             // Autodescubrimiento si hay paquetes definidos
             if (!scanPackages.isEmpty()) {
                 ClassScanner scanner = new ClassScanner(scanPackages);
