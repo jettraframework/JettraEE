@@ -35,7 +35,7 @@
         <!-- Jettra Stack Ecosystem -->
         <jettra.json.version>1.0.0</jettra.json.version>
         <jettra.jwt.version>1.0.0</jettra.jwt.version>
-        <jettra.rules.version>1.0.0-SNAPSHOT</jettra.rules.version>
+        <jettra.rules.version>1.0.0</jettra.rules.version>
         <jettra.flux.version>1.0.0-SNAPSHOT</jettra.flux.version>
         <jettra.annotation.version>1.0.0</jettra.annotation.version>
         <jettra.test.version>1.0.0</jettra.test.version>

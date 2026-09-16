@@ -28,6 +28,7 @@ public class JettraServer {
 
     public static void setContextPath(String cp) {
         contextPath = (cp == null || cp.isBlank() || cp.equals("/")) ? "/" : (cp.startsWith("/") ? cp : "/" + cp);
+        io.jettra.flux.core.FluxConfig.setContextPath(contextPath);
     }
 
     public static String getContextPath() {
@@ -35,14 +36,7 @@ public class JettraServer {
     }
 
     public static String resolvePath(String path) {
-        if (path == null) return contextPath;
-        if (contextPath.equals("/")) {
-            return path.startsWith("/") ? path : "/" + path;
-        }
-        if (!path.startsWith("/")) {
-            path = "/" + path;
-        }
-        return contextPath + path;
+        return io.jettra.flux.core.FluxConfig.resolvePath(path);
     }
 
     public void setPort(int port) {

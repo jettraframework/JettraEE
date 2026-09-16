@@ -1,100 +1,74 @@
 package io.jettra.server.core;
 
+import io.jettra.flux.core.FluxContext;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Contexto y gestión de ámbitos (Request, Session, Application) para JettraFlux en JettraEE.
+ * Contexto y gestión de ámbitos (Request, Session, Application) para JettraEE.
+ * Hereda de FluxContext para ofrecer 100% de interoperabilidad y compatibilidad
+ * con páginas y widgets de JettraFlux, compartiendo el mismo almacén de estados y sesiones.
  */
-public class JettraContext {
+public class JettraContext extends FluxContext {
 
-    public enum Scope {
-        REQUEST, SESSION, APPLICATION, VIEW, WINDOW, CLIENT, CACHE;
-
-        public String getRole() {
-            if (this == SESSION) {
-                JettraContext ctx = JettraContext.getCurrent();
-                if (ctx != null) {
-                    Object roleObj = ctx.get(SESSION, "role");
-                    return roleObj != null ? roleObj.toString() : "";
-                }
-            }
-            return "";
-        }
-    }
-
-    private static final ThreadLocal<JettraContext> currentContext = new ThreadLocal<>();
-    private static final Map<String, Map<String, Object>> applicationScope = new ConcurrentHashMap<>();
-    private static final Map<String, Map<String, Object>> sessions = new ConcurrentHashMap<>();
-
-    private final Map<Scope, Map<String, Object>> localScopes = new ConcurrentHashMap<>();
-    private final String sessionId;
+    private final FluxContext delegate;
 
     public JettraContext(String sessionId) {
-        this.sessionId = sessionId != null ? sessionId : "default-session";
-        Map<String, Object> reqMap = new ConcurrentHashMap<>();
-        reqMap.put("MAP", new ConcurrentHashMap<String, Object>());
-        localScopes.put(Scope.REQUEST, reqMap);
-
-        sessions.computeIfAbsent(this.sessionId, k -> {
-            Map<String, Object> sessMap = new ConcurrentHashMap<>();
-            sessMap.put("MAP", new ConcurrentHashMap<String, Object>());
-            return sessMap;
-        });
+        super(sessionId);
+        this.delegate = null;
     }
 
-    public static void setCurrent(JettraContext context) {
-        currentContext.set(context);
+    protected JettraContext(FluxContext delegate) {
+        super(delegate.getSessionId());
+        this.delegate = delegate;
+    }
+
+    public static void setCurrent(FluxContext context) {
+        FluxContext.setCurrent(context);
     }
 
     public static JettraContext getCurrent() {
-        return currentContext.get();
+        FluxContext cur = FluxContext.getCurrent();
+        if (cur == null) {
+            return null;
+        }
+        if (cur instanceof JettraContext jc) {
+            return jc;
+        }
+        return new JettraContext(cur);
     }
 
-    public static void clear() {
-        currentContext.remove();
-    }
-
+    @Override
     public Object get(Scope scope, String key) {
-        switch (scope) {
-            case APPLICATION:
-                return applicationScope.getOrDefault("global", new ConcurrentHashMap<>()).get(key);
-            case SESSION:
-                return sessions.computeIfAbsent(sessionId, k -> new ConcurrentHashMap<>()).get(key);
-            default:
-                return localScopes.getOrDefault(scope, new ConcurrentHashMap<>()).get(key);
+        if (delegate != null) {
+            return delegate.get(scope, key);
         }
+        return super.get(scope, key);
     }
 
+    @Override
     public void set(Scope scope, String key, Object value) {
-        switch (scope) {
-            case APPLICATION:
-                applicationScope.computeIfAbsent("global", k -> new ConcurrentHashMap<>()).put(key, value);
-                break;
-            case SESSION:
-                sessions.computeIfAbsent(sessionId, k -> new ConcurrentHashMap<>()).put(key, value);
-                break;
-            default:
-                localScopes.computeIfAbsent(scope, k -> new ConcurrentHashMap<>()).put(key, value);
-                break;
+        if (delegate != null) {
+            delegate.set(scope, key, value);
+        } else {
+            super.set(scope, key, value);
         }
     }
 
-    public String getSessionId() {
-        return sessionId;
-    }
-
+    @Override
     public void destroyRequest() {
-        Map<String, Object> reqMap = localScopes.remove(Scope.REQUEST);
-        if (reqMap != null) {
-            reqMap.clear();
+        if (delegate != null) {
+            delegate.destroyRequest();
+        } else {
+            super.destroyRequest();
         }
     }
 
+    @Override
     public void destroyView() {
-        Map<String, Object> viewMap = localScopes.remove(Scope.VIEW);
-        if (viewMap != null) {
-            viewMap.clear();
+        if (delegate != null) {
+            delegate.destroyView();
+        } else {
+            super.destroyView();
         }
     }
 
@@ -111,9 +85,5 @@ public class JettraContext {
 
     public static int getActiveSessionCount() {
         return sessions.size();
-    }
-
-    public static Map<String, Map<String, Object>> getSessions() {
-        return sessions;
     }
 }
