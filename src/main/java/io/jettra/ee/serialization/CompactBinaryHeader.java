@@ -28,6 +28,8 @@ public record CompactBinaryHeader(
     public static final byte[] MAGIC_JDAT = new byte[]{0x4A, 0x44, 0x41, 0x54}; // "JDAT"
     public static final byte[] MAGIC_JSER = new byte[]{0x4A, 0x53, 0x45, 0x52}; // "JSER"
     public static final byte DEFAULT_FORMAT_VERSION = 1;
+    public static final byte FORMAT_VERSION_COMPACT = 1;
+    public static final byte FORMAT_VERSION_COMPRESSED = 2;
     public static final int HEADER_SIZE = 21;
 
     public CompactBinaryHeader {
@@ -36,6 +38,10 @@ public record CompactBinaryHeader(
 
     public static CompactBinaryHeader of(int recordVersion, long timestamp, int payloadLength) {
         return new CompactBinaryHeader(MAGIC_JDAT, DEFAULT_FORMAT_VERSION, recordVersion, timestamp, payloadLength);
+    }
+
+    public static CompactBinaryHeader ofCompressed(int recordVersion, long timestamp, int payloadLength) {
+        return new CompactBinaryHeader(MAGIC_JDAT, FORMAT_VERSION_COMPRESSED, recordVersion, timestamp, payloadLength);
     }
 
     public void writeTo(ByteBuffer buffer) {
